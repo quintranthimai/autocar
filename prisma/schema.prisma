@@ -1,0 +1,452 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model amenities {
+  id              BigInt            @id @default(autoincrement())
+  amenity_type_id BigInt
+  name            String            @unique(map: "amenities_name_unique") @db.VarChar(255)
+  display_name    String            @db.VarChar(255)
+  icon            String?           @db.VarChar(255)
+  created_at      DateTime?         @db.Timestamp(0)
+  updated_at      DateTime?         @db.Timestamp(0)
+  amenity_types   amenity_types     @relation(fields: [amenity_type_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "amenities_amenity_type_id_foreign")
+  amenity_vehicle amenity_vehicle[]
+}
+
+model amenity_types {
+  id           BigInt      @id @default(autoincrement())
+  name         String      @unique(map: "amenity_types_name_unique") @db.VarChar(255)
+  display_name String      @db.VarChar(255)
+  created_at   DateTime?   @db.Timestamp(0)
+  updated_at   DateTime?   @db.Timestamp(0)
+  amenities    amenities[]
+}
+
+model amenity_vehicle {
+  vehicle_id BigInt
+  amenity_id BigInt
+  amenities  amenities @relation(fields: [amenity_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "amenity_vehicle_amenity_id_foreign")
+  vehicles   vehicles  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "amenity_vehicle_vehicle_id_foreign")
+
+  @@id([vehicle_id, amenity_id])
+}
+
+model banners {
+  id            BigInt    @id @default(autoincrement())
+  title         String    @db.VarChar(255)
+  image_url     String    @db.VarChar(255)
+  redirect_url  String?   @db.VarChar(255)
+  position      String    @default("home_main") @db.VarChar(50)
+  is_active     Boolean   @default(true)
+  display_order Int       @default(0)
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+}
+
+model booking_evidences {
+  id          BigInt    @id @default(autoincrement())
+  booking_id  BigInt
+  uploaded_by BigInt
+  phase       String    @db.VarChar(20)
+  file_url    String    @db.VarChar(255)
+  recorded_at DateTime  @db.Timestamp(0)
+  created_at  DateTime? @db.Timestamp(0)
+  updated_at  DateTime? @db.Timestamp(0)
+  bookings    bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "booking_evidences_booking_id_foreign")
+  users       users     @relation(fields: [uploaded_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "booking_evidences_uploaded_by_foreign")
+}
+
+model booking_services {
+  id           BigInt    @id @default(autoincrement())
+  booking_id   BigInt
+  service_name String    @db.VarChar(255)
+  price        Decimal   @db.Decimal(10, 2)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  bookings     bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "booking_services_booking_id_foreign")
+}
+
+model booking_surcharges {
+  id                 BigInt    @id @default(autoincrement())
+  booking_id         BigInt
+  surcharge_type     String    @db.VarChar(50)
+  amount             Decimal   @db.Decimal(12, 2)
+  note               String?   @db.VarChar(255)
+  evidence_image_url String?   @db.VarChar(255)
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+  bookings           bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "booking_surcharges_booking_id_foreign")
+}
+
+model bookings {
+  id                      BigInt               @id @default(autoincrement())
+  renter_id               BigInt
+  vehicle_id              BigInt
+  pickup_location         String               @db.VarChar(255)
+  dropoff_location        String               @db.VarChar(255)
+  start_datetime          DateTime             @db.Timestamp(0)
+  end_datetime            DateTime             @db.Timestamp(0)
+  total_amount            Decimal              @db.Decimal(12, 2)
+  status                  String               @default("pending") @db.VarChar(255)
+  is_contract_signed      Boolean              @default(false)
+  contract_file_url       String?              @db.VarChar(255)
+  cancel_by               String?              @db.VarChar(255)
+  cancel_reason           String?
+  payment_option          String               @default("full") @db.VarChar(20)
+  deposit_amount          Decimal              @default(0) @db.Decimal(12, 2)
+  final_settlement_method String?              @db.VarChar(50)
+  payment_gateway_id      BigInt?
+  created_at              DateTime?            @db.Timestamp(0)
+  updated_at              DateTime?            @db.Timestamp(0)
+  booking_evidences       booking_evidences[]
+  booking_services        booking_services[]
+  booking_surcharges      booking_surcharges[]
+  payment_gateways        payment_gateways?    @relation(fields: [payment_gateway_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_payment_gateway_id_foreign")
+  users                   users                @relation(fields: [renter_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_renter_id_foreign")
+  vehicles                vehicles             @relation(fields: [vehicle_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "bookings_vehicle_id_foreign")
+  reviews                 reviews[]
+  tickets                 tickets[]
+  transactions            transactions[]
+}
+
+model car_models {
+  id               BigInt        @id @default(autoincrement())
+  category_id      BigInt
+  fuel_id          BigInt
+  transmission_id  BigInt
+  brand_name       String        @db.VarChar(255)
+  model_name       String        @db.VarChar(255)
+  seat_count       Int
+  fuel_consumption String?       @db.VarChar(50)
+  created_at       DateTime?     @db.Timestamp(0)
+  updated_at       DateTime?     @db.Timestamp(0)
+  categories       categories    @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "car_models_category_id_foreign")
+  fuels            fuels         @relation(fields: [fuel_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "car_models_fuel_id_foreign")
+  transmissions    transmissions @relation(fields: [transmission_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "car_models_transmission_id_foreign")
+  vehicles         vehicles[]
+}
+
+model categories {
+  id           BigInt       @id @default(autoincrement())
+  name         String       @unique(map: "categories_name_unique") @db.VarChar(255)
+  display_name String       @db.VarChar(255)
+  created_at   DateTime?    @db.Timestamp(0)
+  updated_at   DateTime?    @db.Timestamp(0)
+  car_models   car_models[]
+}
+
+model discount_campaigns {
+  id              BigInt     @id @default(autoincrement())
+  title           String     @db.VarChar(255)
+  applicable_tier String     @default("all") @db.VarChar(20)
+  type            String     @db.VarChar(255)
+  value           Decimal    @db.Decimal(12, 1)
+  start_date      DateTime   @db.Timestamp(0)
+  end_date        DateTime   @db.Timestamp(0)
+  created_at      DateTime?  @db.Timestamp(0)
+  updated_at      DateTime?  @db.Timestamp(0)
+  vouchers        vouchers[]
+}
+
+model fuels {
+  id           BigInt       @id @default(autoincrement())
+  name         String       @unique(map: "fuels_name_unique") @db.VarChar(255)
+  display_name String       @db.VarChar(255)
+  created_at   DateTime?    @db.Timestamp(0)
+  updated_at   DateTime?    @db.Timestamp(0)
+  car_models   car_models[]
+}
+
+model legal_documents {
+  id                 BigInt    @id @default(autoincrement())
+  user_id            BigInt
+  vehicle_id         BigInt?
+  document_type      String    @db.VarChar(50)
+  document_number    String    @db.VarChar(100)
+  front_image_url    String    @db.VarChar(255)
+  back_image_url     String    @db.VarChar(255)
+  ocr_extracted_data Json?     @db.Json
+  status             String    @default("pending") @db.VarChar(20)
+  created_at         DateTime? @db.Timestamp(0)
+  updated_at         DateTime? @db.Timestamp(0)
+  users              users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "legal_documents_user_id_foreign")
+}
+
+model migrations {
+  id        Int    @id @default(autoincrement())
+  migration String @db.VarChar(255)
+  batch     Int
+}
+
+model password_reset_tokens {
+  email      String    @id @db.VarChar(255)
+  token      String    @db.VarChar(255)
+  created_at DateTime? @db.Timestamp(0)
+}
+
+model payment_gateways {
+  id            BigInt     @id @default(autoincrement())
+  code          String     @unique(map: "payment_gateways_code_unique") @db.VarChar(50)
+  name          String     @db.VarChar(255)
+  logo_url      String?    @db.VarChar(255)
+  config_data   Json?      @db.Json
+  is_active     Boolean    @default(true)
+  display_order Int        @default(0)
+  created_at    DateTime?  @db.Timestamp(0)
+  updated_at    DateTime?  @db.Timestamp(0)
+  bookings      bookings[]
+}
+
+model personal_access_tokens {
+  id             BigInt    @id @default(autoincrement())
+  tokenable_type String    @db.VarChar(255)
+  tokenable_id   BigInt
+  name           String
+  token          String    @unique(map: "personal_access_tokens_token_unique") @db.VarChar(64)
+  abilities      String?
+  last_used_at   DateTime? @db.Timestamp(0)
+  expires_at     DateTime? @db.Timestamp(0)
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+
+  @@index([expires_at], map: "personal_access_tokens_expires_at_index")
+  @@index([tokenable_type, tokenable_id], map: "personal_access_tokens_tokenable_type_tokenable_id_index")
+}
+
+model reviews {
+  id                               BigInt    @id @default(autoincrement())
+  booking_id                       BigInt
+  reviewer_id                      BigInt
+  reviewee_id                      BigInt
+  rating                           Int
+  comment                          String?
+  reply_comment                    String?
+  created_at                       DateTime? @db.Timestamp(0)
+  updated_at                       DateTime? @db.Timestamp(0)
+  bookings                         bookings  @relation(fields: [booking_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_booking_id_foreign")
+  users_reviews_reviewee_idTousers users     @relation("reviews_reviewee_idTousers", fields: [reviewee_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_reviewee_id_foreign")
+  users_reviews_reviewer_idTousers users     @relation("reviews_reviewer_idTousers", fields: [reviewer_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "reviews_reviewer_id_foreign")
+}
+
+model role_user {
+  user_id BigInt
+  role_id BigInt
+  roles   roles  @relation(fields: [role_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_user_role_id_foreign")
+  users   users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "role_user_user_id_foreign")
+
+  @@id([user_id, role_id])
+}
+
+model roles {
+  id          BigInt      @id @default(autoincrement())
+  name        String      @unique(map: "roles_name_unique") @db.VarChar(50)
+  slug        String      @unique(map: "roles_slug_unique") @db.VarChar(50)
+  description String?     @db.VarChar(255)
+  created_at  DateTime?   @db.Timestamp(0)
+  updated_at  DateTime?   @db.Timestamp(0)
+  role_user   role_user[]
+}
+
+model static_pages {
+  id                  BigInt    @id @default(autoincrement())
+  slug                String    @unique(map: "static_pages_slug_unique") @db.VarChar(100)
+  title               String    @db.VarChar(255)
+  content             String
+  updated_by_admin_id BigInt
+  created_at          DateTime? @db.Timestamp(0)
+  updated_at          DateTime? @db.Timestamp(0)
+  users               users     @relation(fields: [updated_by_admin_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "static_pages_updated_by_admin_id_foreign")
+}
+
+model system_settings {
+  id            BigInt    @id @default(autoincrement())
+  setting_key   String    @unique(map: "system_settings_setting_key_unique") @db.VarChar(100)
+  setting_value String
+  description   String?   @db.VarChar(255)
+  updated_by    BigInt?
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+  users         users?    @relation(fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "system_settings_updated_by_foreign")
+}
+
+model ticket_categories {
+  id           BigInt    @id @default(autoincrement())
+  name         String    @unique(map: "ticket_categories_name_unique") @db.VarChar(50)
+  display_name String    @db.VarChar(255)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  tickets      tickets[]
+}
+
+model tickets {
+  id                                     BigInt            @id @default(autoincrement())
+  ticket_category_id                     BigInt
+  user_id                                BigInt
+  booking_id                             BigInt?
+  assigned_staff_id                      BigInt?
+  subject                                String            @db.VarChar(255)
+  content                                String
+  status                                 String            @default("new") @db.VarChar(20)
+  priority                               String            @default("medium") @db.VarChar(20)
+  rating                                 Int?
+  created_at                             DateTime?         @db.Timestamp(0)
+  updated_at                             DateTime?         @db.Timestamp(0)
+  users_tickets_assigned_staff_idTousers users?            @relation("tickets_assigned_staff_idTousers", fields: [assigned_staff_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tickets_assigned_staff_id_foreign")
+  bookings                               bookings?         @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tickets_booking_id_foreign")
+  ticket_categories                      ticket_categories @relation(fields: [ticket_category_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tickets_ticket_category_id_foreign")
+  users_tickets_user_idTousers           users             @relation("tickets_user_idTousers", fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "tickets_user_id_foreign")
+}
+
+model transactions {
+  id           BigInt    @id @default(autoincrement())
+  wallet_id    BigInt?
+  booking_id   BigInt?
+  amount       Decimal   @db.Decimal(12, 2)
+  type         String    @db.VarChar(255)
+  balance_type String    @db.VarChar(255)
+  description  String
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  bookings     bookings? @relation(fields: [booking_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transactions_booking_id_foreign")
+  wallets      wallets?  @relation(fields: [wallet_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "transactions_wallet_id_foreign")
+}
+
+model transmissions {
+  id           BigInt       @id @default(autoincrement())
+  name         String       @unique(map: "transmissions_name_unique") @db.VarChar(50)
+  display_name String       @db.VarChar(255)
+  created_at   DateTime?    @db.Timestamp(0)
+  updated_at   DateTime?    @db.Timestamp(0)
+  car_models   car_models[]
+}
+
+model users {
+  id                                       BigInt              @id @default(autoincrement())
+  name                                     String              @db.VarChar(255)
+  email                                    String              @unique(map: "users_email_unique") @db.VarChar(255)
+  password                                 String              @db.VarChar(255)
+  phone                                    String?             @unique(map: "users_phone_unique") @db.VarChar(255)
+  address                                  String?             @db.VarChar(255)
+  avatar                                   String?             @db.VarChar(255)
+  kyc_status                               String              @default("pending") @db.VarChar(255)
+  credit_score                             Decimal             @default(5) @db.Decimal(2, 1)
+  is_blacklisted                           Boolean             @default(false)
+  avg_rental_spend                         Decimal             @default(0) @db.Decimal(12, 2)
+  avg_partner_revenue                      Decimal             @default(0) @db.Decimal(12, 2)
+  membership_tier                          String              @default("bronze") @db.VarChar(20)
+  membership_tier_name                     String              @default("Đồng") @db.VarChar(50)
+  response_rate                            Int                 @default(100)
+  response_time_minutes                    Int                 @default(5)
+  created_at                               DateTime?           @db.Timestamp(0)
+  updated_at                               DateTime?           @db.Timestamp(0)
+  booking_evidences                        booking_evidences[]
+  bookings                                 bookings[]
+  legal_documents                          legal_documents[]
+  reviews_reviews_reviewee_idTousers       reviews[]           @relation("reviews_reviewee_idTousers")
+  reviews_reviews_reviewer_idTousers       reviews[]           @relation("reviews_reviewer_idTousers")
+  role_user                                role_user[]
+  static_pages                             static_pages[]
+  system_settings                          system_settings[]
+  tickets_tickets_assigned_staff_idTousers tickets[]           @relation("tickets_assigned_staff_idTousers")
+  tickets_tickets_user_idTousers           tickets[]           @relation("tickets_user_idTousers")
+  vehicles                                 vehicles[]
+  vouchers                                 vouchers[]
+  wallets                                  wallets?
+}
+
+model vehicle_calendars {
+  id           BigInt    @id @default(autoincrement())
+  vehicle_id   BigInt
+  date         DateTime  @db.Date
+  custom_price Decimal?  @db.Decimal(10, 2)
+  is_blocked   Boolean   @default(false)
+  created_at   DateTime? @db.Timestamp(0)
+  updated_at   DateTime? @db.Timestamp(0)
+  vehicles     vehicles  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "vehicle_calendars_vehicle_id_foreign")
+}
+
+model vehicle_images {
+  id            BigInt    @id @default(autoincrement())
+  vehicle_id    BigInt
+  image_url     String    @db.VarChar(255)
+  is_thumbnail  Boolean   @default(false)
+  display_order Int       @default(0)
+  created_at    DateTime? @db.Timestamp(0)
+  updated_at    DateTime? @db.Timestamp(0)
+  vehicles      vehicles  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "vehicle_images_vehicle_id_foreign")
+}
+
+model vehicle_surcharges {
+  id             BigInt    @id @default(autoincrement())
+  vehicle_id     BigInt
+  surcharge_type String    @db.VarChar(50)
+  price          Decimal   @db.Decimal(12, 2)
+  unit           String?   @db.VarChar(20)
+  title          String    @db.VarChar(255)
+  description    String?
+  created_at     DateTime? @db.Timestamp(0)
+  updated_at     DateTime? @db.Timestamp(0)
+  vehicles       vehicles  @relation(fields: [vehicle_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "vehicle_surcharges_vehicle_id_foreign")
+}
+
+model vehicles {
+  id                    BigInt               @id @default(autoincrement())
+  owner_id              BigInt
+  car_model_id          BigInt
+  license_plate         String               @unique(map: "vehicles_license_plate_unique") @db.VarChar(255)
+  vin_number            String               @unique(map: "vehicles_vin_number_unique") @db.VarChar(255)
+  engine_number         String               @unique(map: "vehicles_engine_number_unique") @db.VarChar(255)
+  year                  Int
+  base_price            Decimal              @db.Decimal(10, 2)
+  description           String?
+  parking_address       String               @db.VarChar(255)
+  latitude              Decimal?             @db.Decimal(10, 8)
+  longitude             Decimal?             @db.Decimal(11, 8)
+  current_fuel_level    Int                  @default(100)
+  status                String               @default("pending") @db.VarChar(255)
+  required_documents    Json?                @db.Json
+  is_mortgage_exempt    Boolean              @default(false)
+  is_delivery_supported Boolean              @default(false)
+  delivery_radius_km    Int?
+  delivery_fee_per_km   Decimal?             @db.Decimal(10, 2)
+  created_at            DateTime?            @db.Timestamp(0)
+  updated_at            DateTime?            @db.Timestamp(0)
+  amenity_vehicle       amenity_vehicle[]
+  bookings              bookings[]
+  vehicle_calendars     vehicle_calendars[]
+  vehicle_images        vehicle_images[]
+  vehicle_surcharges    vehicle_surcharges[]
+  car_models            car_models           @relation(fields: [car_model_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vehicles_car_model_id_foreign")
+  users                 users                @relation(fields: [owner_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "vehicles_owner_id_foreign")
+}
+
+model vouchers {
+  id                 BigInt             @id @default(autoincrement())
+  campaign_id        BigInt
+  code               String             @unique(map: "vouchers_code_unique") @db.VarChar(50)
+  usage_limit        Int?
+  used_count         Int                @default(0)
+  created_by_user_id BigInt?
+  created_at         DateTime?          @db.Timestamp(0)
+  updated_at         DateTime?          @db.Timestamp(0)
+  discount_campaigns discount_campaigns @relation(fields: [campaign_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vouchers_campaign_id_foreign")
+  users              users?             @relation(fields: [created_by_user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "vouchers_created_by_user_id_foreign")
+}
+
+model wallets {
+  id                BigInt         @id @default(autoincrement())
+  user_id           BigInt         @unique(map: "wallets_user_id_unique")
+  available_balance Decimal        @default(0) @db.Decimal(15, 2)
+  deposit_balance   Decimal        @default(0) @db.Decimal(15, 2)
+  status            String         @default("active") @db.VarChar(255)
+  created_at        DateTime?      @db.Timestamp(0)
+  updated_at        DateTime?      @db.Timestamp(0)
+  transactions      transactions[]
+  users             users          @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "wallets_user_id_foreign")
+}
