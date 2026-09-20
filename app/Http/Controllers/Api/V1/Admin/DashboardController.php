@@ -313,4 +313,65 @@ class DashboardController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+    /**
+     * ========================================================================
+     * 4. HÀM THỐNG KÊ CHI TIẾT LOẠI XE (VEHICLE CATEGORY STATS)
+     * ========================================================================
+     * Phân tích sâu về doanh thu, lợi nhuận và số đơn theo từng loại xe (4 chỗ, 7 chỗ...)
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getVehicleStats(Request $request)
+    {
+        $year = $request->input('year', Carbon::now()->year);
+
+        // 1. Thống kê theo danh mục xe (Category)
+        $categoryStats = DB::table('bookings')
+            ->join('vehicles', 'bookings.vehicle_id', '=', 'vehicles.id')
+            ->join('car_models', 'vehicles.car_model_id', '=', 'car_models.id')
+            ->join('categories', 'car_models.category_id', '=', 'categories.id')
+            ->where('bookings.status', 'completed')
+            ->whereYear('bookings.created_at', $year)
+            ->select(
+                'categories.name as category_name',
+                DB::raw('COUNT(bookings.id) as total_trips'),
+                DB::raw('SUM(bookings.total_amount) as total_revenue'),
+                DB::raw('SUM(bookings.total_amount * 0.3) as total_profit')
+            )
+            ->groupBy('categories.id', 'categories.name')
+            ->orderByDesc('total_revenue')
+            ->get();
+
+        // 2. Xe được thuê nhiều nhất và ít nhất
+        $vehiclePerformance = DB::table('bookings')
+            ->join('vehicles', 'bookings.vehicle_id', '=', 'vehicles.id')
+            ->join('car_models', 'vehicles.car_model_id', '=', 'car_models.id')
+            ->where('bookings.status', 'completed')
+            ->whereYear('bookings.created_at', $year)
+            ->select(
+                'vehicles.id',
+                DB::raw('CONCAT(car_models.brand_name, " ", car_models.model_name) as name'),
+                'vehicles.license_plate',
+                DB::raw('COUNT(bookings.id) as total_trips'),
+                DB::raw('SUM(bookings.total_amount) as total_revenue'),
+                DB::raw('SUM(bookings.total_amount * 0.3) as total_profit')
+            )
+            ->groupBy('vehicles.id', 'car_models.brand_name', 'car_models.model_name', 'vehicles.license_plate')
+            ->get();
+
+        $mostRented = $vehiclePerformance->sortByDesc('total_trips')->take(5)->values();
+        $leastRented = $vehiclePerformance->sortBy('total_trips')->take(5)->values();
+        $highestProfit = $vehiclePerformance->sortByDesc('total_profit')->take(5)->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'categories' => $categoryStats,
+                'most_rented' => $mostRented,
+                'least_rented' => $leastRented,
+                'highest_profit' => $highestProfit
+            ]
+        ]);
+    }
 }

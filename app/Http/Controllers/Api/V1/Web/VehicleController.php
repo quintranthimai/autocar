@@ -641,4 +641,49 @@ class VehicleController
 
         return response()->json(['success' => true, 'message' => 'Đã mở khóa lịch thành công.']);
     }
+    /**
+     * ========================================================================
+     * 10. HÀM THỐNG KÊ: LẤY THỐNG KÊ DOANH THU & XE ĐƯỢC THUÊ NHIỀU CỦA CHỦ XE
+     * ========================================================================
+     */
+    public function getOwnerStats(Request $request)
+    {
+        $user = Auth::user();
+        $year = $request->input('year', \Carbon\Carbon::now()->year);
+        $month = $request->input('month', \Carbon\Carbon::now()->month);
+
+        $bookings = DB::table('bookings')
+            ->join('vehicles', 'bookings.vehicle_id', '=', 'vehicles.id')
+            ->join('car_models', 'vehicles.car_model_id', '=', 'car_models.id')
+            ->where('vehicles.owner_id', $user->id)
+            ->where('bookings.status', 'completed')
+            ->whereYear('bookings.end_datetime', $year)
+            ->whereMonth('bookings.end_datetime', $month)
+            ->select(
+                'vehicles.id',
+                'vehicles.license_plate',
+                DB::raw('CONCAT(car_models.brand_name, " ", car_models.model_name) as vehicle_name'),
+                DB::raw('COUNT(bookings.id) as trips_count'),
+                DB::raw('SUM(bookings.total_amount) as total_revenue') 
+            )
+            ->groupBy('vehicles.id', 'vehicles.license_plate', 'car_models.brand_name', 'car_models.model_name')
+            ->get();
+            
+        $totalRevenue = $bookings->sum('total_revenue');
+        $totalEarning = $totalRevenue * 0.7; // Tạm tính chủ xe nhận 70%
+        $totalTrips = $bookings->sum('trips_count');
+        
+        $topVehicle = $bookings->sortByDesc('trips_count')->first();
+        
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'total_revenue' => $totalRevenue,
+                'total_earning' => $totalEarning,
+                'total_trips' => $totalTrips,
+                'top_vehicle' => $topVehicle,
+                'vehicles_stats' => $bookings
+            ]
+        ]);
+    }
 }

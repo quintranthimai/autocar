@@ -235,6 +235,9 @@ Route::prefix('v1/web')->middleware('auth:sanctum')->group(function () {
     Route::get('/partner/vehicles/{id}/busy-dates', [VehicleController::class, 'getBusyDates']);
     Route::post('/partner/vehicles/{id}/busy-dates', [VehicleController::class, 'addBusyDates']);
     Route::delete('/partner/vehicles/{id}/busy-dates', [VehicleController::class, 'removeBusyDate']);
+    
+    // Thống kê chủ xe
+    Route::get('/partner/dashboard-stats', [VehicleController::class, 'getOwnerStats']);
 });
 
 /*
@@ -248,6 +251,7 @@ Route::prefix('v1/admin')->middleware('auth:sanctum')->group(function () {
     // API Thống kê Dashboard
     Route::get('/dashboard/summary', [App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'getSummary']);
     Route::get('/dashboard/chart', [App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'getChartData']);
+    Route::get('/dashboard/vehicle-stats', [App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'getVehicleStats']);
     Route::get('/dashboard/export', [App\Http\Controllers\Api\V1\Admin\DashboardController::class, 'exportReport']);
 
     // API quản lý người dùng
