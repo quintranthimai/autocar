@@ -662,7 +662,7 @@ class VehicleController
             ->select(
                 'vehicles.id',
                 'vehicles.license_plate',
-                DB::raw('CONCAT(car_models.brand_name, " ", car_models.model_name) as vehicle_name'),
+                DB::raw("CONCAT(car_models.brand_name, ' ', car_models.model_name) as vehicle_name"),
                 DB::raw('COUNT(bookings.id) as trips_count'),
                 DB::raw('SUM(bookings.total_amount) as total_revenue') 
             )

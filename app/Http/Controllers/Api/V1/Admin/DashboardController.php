@@ -351,7 +351,7 @@ class DashboardController extends Controller
             ->whereYear('bookings.created_at', $year)
             ->select(
                 'vehicles.id',
-                DB::raw('CONCAT(car_models.brand_name, " ", car_models.model_name) as name'),
+                DB::raw("CONCAT(car_models.brand_name, ' ', car_models.model_name) as name"),
                 'vehicles.license_plate',
                 DB::raw('COUNT(bookings.id) as total_trips'),
                 DB::raw('SUM(bookings.total_amount) as total_revenue'),
