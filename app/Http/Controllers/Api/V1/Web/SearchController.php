@@ -171,14 +171,18 @@ class SearchController
      * @return \Illuminate\Http\JsonResponse Dữ liệu tùy chọn tĩnh
      */
     public function getFilterOptions() {
-        return response()->json([
-            'success' => true,
-            'data' => [
+        $data = \Illuminate\Support\Facades\Cache::remember('filter_options', 86400, function () {
+            return [
                 'categories' => \App\Models\Category::all(),
                 'fuels' => \App\Models\Fuel::all(),
                 'transmissions' => \App\Models\Transmission::all(),
                 'car_models' => \App\Models\CarModel::all() 
-            ]
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data
         ]);
     }
 }
