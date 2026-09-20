@@ -148,7 +148,9 @@ class User extends Authenticatable
      */
     public function getAvgRatingAttribute()
     {
-        return $this->reviewsReceived()->avg('rating') ?: 0;
+        return \Illuminate\Support\Facades\Cache::remember('user_avg_rating_' . $this->id, 3600, function () {
+            return $this->reviewsReceived()->avg('rating') ?: 0;
+        });
     }
 
     /**
@@ -161,6 +163,8 @@ class User extends Authenticatable
      */
     public function getTotalReviewsAttribute()
     {
-        return $this->reviewsReceived()->count();
+        return \Illuminate\Support\Facades\Cache::remember('user_total_reviews_' . $this->id, 3600, function () {
+            return $this->reviewsReceived()->count();
+        });
     }
 }

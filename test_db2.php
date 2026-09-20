@@ -1,0 +1,1 @@
+<?php require 'vendor/autoload.php'; $app = require_once 'bootstrap/app.php'; $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class); $kernel->bootstrap(); $start = microtime(true); app('App\Http\Controllers\Api\V1\Web\SearchController')->index(request()); echo 'Time: ' . (microtime(true) - $start) . 's';

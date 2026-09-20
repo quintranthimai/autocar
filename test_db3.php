@@ -1,0 +1,1 @@
+<?php require 'vendor/autoload.php'; $app = require_once 'bootstrap/app.php'; $kernel = $app->make(Illuminate\Contracts\Console\Kernel::class); $kernel->bootstrap(); DB::enableQueryLog(); app('App\Http\Controllers\Api\V1\Web\SearchController')->index(request()); print_r(DB::getQueryLog());

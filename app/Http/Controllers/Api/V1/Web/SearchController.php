@@ -140,24 +140,30 @@ class SearchController
         // ============================================================================
         // TRẢ VỀ KẾT QUẢ ĐỐI TƯỢNG PHẦN TRANG (PAGINATED RESPONSE)
         // ============================================================================
-        // Nạp trước dữ liệu liên kết Eager Loading nhằm loại trừ độ chễ query N+1
-        $query->with([
-            'images' => function($q) {
-                $q->where('is_thumbnail', true); // Chỉ lấy hình ảnh đại diện (ảnh bìa Thumbnail) cho giao diện thẻ xe
-            },
-            'owner', 
-            'carModel.category', 
-            'carModel.transmission', 
-            'carModel.fuel', 
-            'amenities'
-        ])->withCount(['bookings as total_trips' => function($q) {
-            $q->where('status', 'completed'); // Đếm lượt hoàn hảo cho độ uy tín của xe
-        }]);
+        $cacheKey = 'search_vehicles_' . md5(json_encode($request->all()));
+        
+        $data = \Illuminate\Support\Facades\Cache::remember($cacheKey, 300, function () use ($query, $request) {
+            // Nạp trước dữ liệu liên kết Eager Loading
+            $query->with([
+                'images' => function($q) {
+                    $q->where('is_thumbnail', true); // Chỉ lấy hình ảnh đại diện (ảnh bìa Thumbnail)
+                },
+                'owner', 
+                'carModel.category', 
+                'carModel.transmission', 
+                'carModel.fuel', 
+                'amenities'
+            ])->withCount(['bookings as total_trips' => function($q) {
+                $q->where('status', 'completed'); // Đếm lượt hoàn hảo cho độ uy tín của xe
+            }]);
+
+            return $query->paginate($request->input('per_page', 15));
+        });
 
         return response()->json([
             'success' => true,
             'message' => 'Lấy danh sách xe thành công.',
-            'data' => $query->paginate($request->input('per_page', 15))
+            'data' => $data
         ]);
     }
 
